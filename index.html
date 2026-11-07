@@ -353,6 +353,12 @@ footer{text-align:center;padding:26px;color:#6f7ea6;font-size:12.5px;border-top:
 @keyframes shimmer{from{background-position:200% 0}to{background-position:0 0}}
 .pg-media iframe.yt{width:100%;aspect-ratio:16/9;border:0;border-radius:6px;box-shadow:0 8px 20px rgba(60,40,10,.35);background:#000}
 .v-wrap{width:100%;display:flex;flex-direction:column;align-items:center;gap:.5em}
+.v-box{position:relative;width:100%;display:flex;justify-content:center}
+.v-hint{position:absolute;left:50%;bottom:14%;transform:translateX(-50%);z-index:3;pointer-events:none;white-space:nowrap;
+  background:rgba(20,24,34,.84);color:#fff;font-size:.72em;font-weight:700;padding:.5em 1.1em;border-radius:999px;
+  box-shadow:0 6px 16px rgba(0,0,0,.3);opacity:0;transition:opacity .35s}
+.v-hint.show{opacity:1;animation:hintPulse 1.8s ease-in-out infinite}
+@keyframes hintPulse{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.06)}}
 .pg-media video[data-lsrc]{width:100%;max-height:100%;background:#000;border-radius:6px}
 .v-open{font-size:.7em;color:#8a7350;text-decoration:none;border:1px solid #d9c9a6;border-radius:999px;padding:.25em .9em;background:rgba(255,255,255,.75)}
 .v-open:hover{background:#fff}
@@ -1209,7 +1215,7 @@ function parseVideo(raw){
   return {kind:'link', prov:'web', url:u, embed:''};
 }
 const vInfo = it => it.kind === 'youtube'
-  ? {prov:'youtube', url:`https://youtu.be/${it.yt}`, embed:`https://www.youtube-nocookie.com/embed/${it.yt}?enablejsapi=1&rel=0&playsinline=1`}
+  ? {prov:'youtube', url:`https://youtu.be/${it.yt}`, embed:`https://www.youtube-nocookie.com/embed/${it.yt}?enablejsapi=1&rel=0&playsinline=1${/^https?:/.test(location.protocol) ? '&origin=' + encodeURIComponent(location.origin) : ''}`}
   : (parseVideo(it.url) || {prov:'web', url:it.url, embed:''});
 const isLinky = it => !!it && (it.kind === 'youtube' || it.kind === 'link');
 function parseYT(u){
@@ -2006,12 +2012,81 @@ function buildPages(s){
   return out;
 }
 const head = (sec, s) => `<div class="pg-head"><span>${sec.num}. ${sec.label}</span><span>${esc(plainName(s.name))}</span></div><div class="pg-rule"></div>`;
+/* ---------- 영상 자동 재생 ---------- */
+const CAN_AUTO = {youtube:1, vimeo:1, naver:1, kakao:1, file:1};   // 구글 드라이브는 자동 재생을 지원하지 않음
+function autoURL(v){
+  if(!v.embed) return '';
+  try{
+    const u = new URL(v.embed);
+    if(v.prov === 'youtube' || v.prov === 'vimeo' || v.prov === 'kakao') u.searchParams.set('autoplay', '1');
+    if(v.prov === 'naver') u.searchParams.set('autoPlay', 'true');
+    return u.toString();
+  }catch(e){ return v.embed; }
+}
+function vHint(el, on, text){
+  const h = el.parentElement && el.parentElement.querySelector('.v-hint'); if(!h) return;
+  if(text) h.textContent = text;
+  h.classList.toggle('show', !!on);
+}
+function vPlaying(el){ el.dataset.playing = '1'; clearTimeout(el._ht); vHint(el, false); }
+function syncVideos(){
+  const vis = new Set([2*flipped - 1, 2*flipped]);
+  let first = true, any = false;
+  [...document.querySelectorAll('#book [data-lsrc]')].sort((a,b) => a.dataset.pg - b.dataset.pg).forEach(el => {
+    const on = vis.has(+el.dataset.pg);
+    if(on){
+      any = true;
+      const auto = first && !!CAN_AUTO[el.dataset.prov]; if(auto) first = false;   // 펼친 두 쪽에서 자동 재생 가능한 첫 영상만 재생
+      if(el.dataset.on === '1') return;
+      el.dataset.on = '1'; el.dataset.playing = '0'; clearTimeout(el._ht);
+      if(el.tagName === 'VIDEO'){
+        el.src = el.dataset.lsrc;
+        if(!auto){ vHint(el, true, '▶ 클릭하면 영상이 재생됩니다'); return; }
+        el.play().then(() => vPlaying(el)).catch(() => {
+          el.muted = true;   // 소리 있는 자동 재생이 막히면 소리 없이라도 재생
+          el.play().then(() => vHint(el, true, '🔇 클릭하면 소리가 켜집니다')).catch(() => vHint(el, true, '▶ 클릭하면 영상이 재생됩니다'));
+        });
+      } else {
+        el.src = auto ? (el.dataset.asrc || el.dataset.lsrc) : el.dataset.lsrc;
+        if(!auto){ vHint(el, true, '▶ 클릭하면 영상이 재생됩니다'); return; }
+        vHint(el, false);
+        el._ht = setTimeout(() => { if(el.dataset.playing !== '1') vHint(el, true, '▶ 클릭하면 영상이 재생됩니다'); }, 2500);   // 늦으면 안내
+      }
+    } else if(el.dataset.on === '1'){
+      clearTimeout(el._ht);
+      if(el.tagName === 'VIDEO'){ el.pause(); el.removeAttribute('src'); el.load(); } else el.src = 'about:blank';
+      el.dataset.on = '0'; vHint(el, false);
+    }
+  });
+  if(any && playing){ stopPlay(); toast('🎬 영상이 있는 페이지라 자동 넘김을 멈췄습니다. ▶ 자동 넘김을 다시 누르면 이어집니다.', 3500); }
+}
+/* 재생 시작을 알아채면 안내 문구 숨김 */
+document.addEventListener('load', e => {   // 유튜브 · 비메오에 재생 상태 알림 요청
+  const f = e.target; if(!f || f.tagName !== 'IFRAME' || !f.dataset.lsrc || f.dataset.on !== '1') return;
+  try{
+    if(f.dataset.prov === 'youtube') f.contentWindow.postMessage(JSON.stringify({event:'listening', id:f.dataset.pg}), '*');
+    if(f.dataset.prov === 'vimeo') f.contentWindow.postMessage(JSON.stringify({method:'addEventListener', value:'play'}), '*');
+  }catch(x){}
+}, true);
+window.addEventListener('message', e => {
+  let d = e.data; if(typeof d === 'string'){ try{ d = JSON.parse(d); }catch(x){ return; } }
+  if(!d || typeof d !== 'object') return;
+  const started = (d.event === 'infoDelivery' && d.info && d.info.playerState === 1) || (d.event === 'onStateChange' && d.info === 1) || d.event === 'play';
+  if(!started) return;
+  document.querySelectorAll('#book iframe[data-lsrc]').forEach(f => { if(f.contentWindow === e.source) vPlaying(f); });
+});
+document.addEventListener('playing', e => { if(e.target.dataset && e.target.dataset.lsrc && !e.target.muted) vPlaying(e.target); }, true);
+document.addEventListener('volumechange', e => { const v = e.target; if(v.dataset && v.dataset.lsrc && !v.muted && !v.paused) vPlaying(v); }, true);
+window.addEventListener('blur', () => setTimeout(() => {   // 영상 화면을 클릭하면 안내 숨김
+  const a = document.activeElement; if(a && a.tagName === 'IFRAME' && a.dataset.lsrc) vPlaying(a);
+}, 0));
 function mediaHTML(it, idx){
   if(isLinky(it)){
     const v = vInfo(it); let dom = ''; try{ dom = new URL(v.url).hostname.replace(/^www\./, ''); }catch(e){}
     const open = `<a class="no-flip v-open" href="${esc(v.url)}" target="_blank" rel="noopener">새 창에서 보기 ↗</a>`;
-    if(v.prov === 'file') return `<div class="v-wrap no-flip"><video class="no-flip" data-lsrc="${esc(v.embed)}" data-pg="${idx}" controls playsinline preload="metadata"></video>${open}</div>`;
-    if(v.embed) return `<div class="v-wrap no-flip"><iframe class="no-flip yt" data-lsrc="${esc(v.embed)}" data-pg="${idx}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen title="수업 영상"></iframe>${open}</div>`;
+    const hint = `<span class="v-hint">▶ 클릭하면 영상이 재생됩니다</span>`;
+    if(v.prov === 'file') return `<div class="v-wrap no-flip"><div class="v-box"><video class="no-flip" data-lsrc="${esc(v.embed)}" data-prov="file" data-pg="${idx}" controls playsinline preload="metadata"></video>${hint}</div>${open}</div>`;
+    if(v.embed) return `<div class="v-wrap no-flip"><div class="v-box"><iframe class="no-flip yt" data-lsrc="${esc(v.embed)}" data-asrc="${esc(autoURL(v))}" data-prov="${v.prov}" data-pg="${idx}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen title="수업 영상"></iframe>${hint}</div>${open}</div>`;
     return `<a class="no-flip v-card" href="${esc(v.url)}" target="_blank" rel="noopener"><span class="v-play">▶</span><b>영상 보기</b><small>${esc(dom)} · 새 창에서 열립니다</small></a>`;
   };
   const src = cachedSrc(it);
@@ -2099,15 +2174,7 @@ function updateUI(){
   document.querySelectorAll('#rChips .chip').forEach((c,i) => { if(+c.dataset.p <= right) act = i; });
   document.querySelectorAll('#rChips .chip').forEach((c,i) => c.classList.toggle('act', i === act));
   document.querySelectorAll('#book video').forEach(v => { if(!v.paused) v.pause(); });
-  const vis = new Set([2*flipped - 1, 2*flipped]);
-  document.querySelectorAll('#book [data-lsrc]').forEach(el => {
-    const on = vis.has(+el.dataset.pg);
-    if(on && el.dataset.on !== '1'){ el.src = el.dataset.lsrc; el.dataset.on = '1'; }
-    else if(!on && el.dataset.on === '1'){
-      if(el.tagName === 'VIDEO'){ el.pause(); el.removeAttribute('src'); el.load(); } else el.src = 'about:blank';
-      el.dataset.on = '0';
-    }
-  });
+  if(!jumping) syncVideos();
   if(!jumping) ensureAround();
 }
 function flipSound(){
@@ -2145,7 +2212,7 @@ function goSpread(t){
     if(tok !== goToken) return;
     if(flipped < t){ next(); setTimeout(step, 120); }
     else if(flipped > t){ prev(); setTimeout(step, 120); }
-    else { jumping = false; ensureAround(); }
+    else { jumping = false; ensureAround(); syncVideos(); }
   };
   step();
 }
