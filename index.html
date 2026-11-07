@@ -782,60 +782,6 @@ footer{text-align:center;padding:26px;color:#6f7ea6;font-size:12.5px;border-top:
 /* 받침 선반: 단색 나무판 */
 [data-theme=light] .cc-shelf::after{left:-6px;right:-6px;bottom:-9px;height:9px;border-radius:2px;background:#dcc7a3;
   box-shadow:inset 0 2px 0 #eadbc0,inset 0 -2px 0 #c7ad84,0 6px 10px -6px rgba(60,40,10,.45)}
-
-/* =====================================================================
-   카테고리 서가: 그러데이션 없이 단색 면으로 그린 책장
-   ===================================================================== */
-[data-theme=light] #grid.shelves{max-width:1300px}
-[data-theme=light] .shelf{margin-bottom:0}
-[data-theme=light] .shelf + .shelf{margin-top:-4px}
-[data-theme=light] .shelf-head{margin:40px 4px 12px}
-[data-theme=light] .shelf.solo .shelf-grid{margin-top:8px}
-/* 책장 한 칸: 기둥 · 윗판 · 뒤판(세로 나무판 이음선) · 단색 그늘 */
-[data-theme=light] .shelf-grid{
-  --wood:#d2b080;--wood-top:#e3c79c;--wood-dark:#b38d58;--back:#f1e5cd;--seam:#e2d0ae;
-  padding:30px 30px 0;border-radius:0;
-  background-color:var(--back);
-  background-image:repeating-linear-gradient(90deg,transparent 0 118px,var(--seam) 118px 120px);
-  border-left:12px solid var(--wood);border-right:12px solid var(--wood);border-top:12px solid var(--wood-dark);
-  box-shadow:inset 0 16px 0 rgba(120,88,45,.13),     /* 윗판이 드리운 그늘 */
-             inset 10px 0 0 rgba(120,88,45,.09),      /* 왼쪽 기둥 그늘 */
-             inset -4px 0 0 rgba(120,88,45,.05),
-             0 0 0 1px #c09a66}
-/* 기둥 앞면 선 (나무 결) */
-[data-theme=light] .shelf-grid::before{content:'';position:absolute;left:-12px;right:-12px;top:-12px;bottom:0;pointer-events:none;
-  border-left:3px solid var(--wood-top);border-right:3px solid #c09a66;border-top:3px solid #c39d67;filter:none;box-shadow:none;background:none;height:auto;border-radius:0}
-/* 선반 판: 윗면(밝게) · 앞면 · 아래 그늘선 · 바닥 그림자(단색) */
-[data-theme=light] .shelf-grid::after{left:-12px;right:-12px;bottom:-20px;height:20px;border-radius:0;
-  background:var(--wood);
-  box-shadow:inset 0 5px 0 var(--wood-top),inset 0 -2px 0 var(--wood-dark),0 8px 0 rgba(110,80,40,.12)}
-/* 책: 밝은 단색 표지 · 종이 두께 · 단색 그림자 */
-[data-theme=light] .shelf-grid .book-card{--tone:color-mix(in srgb,var(--c) 66%,#fff);--ink:color-mix(in srgb,var(--c) 50%,#141a26);
-  border-radius:3px 7px 7px 3px;
-  box-shadow:1px 1px 0 #faf6ee,2px 2px 0 #e8e0cf,3px 3px 0 #faf6ee,4px 4px 0 #e2d8c4,5px 5px 0 #f6f1e6,6px 6px 0 #d5c8ad,
-             12px 0 0 -2px rgba(110,80,40,.10)}
-[data-theme=light] .shelf-grid .book-card:hover{
-  box-shadow:1px 1px 0 #faf6ee,2px 2px 0 #e8e0cf,3px 3px 0 #faf6ee,4px 4px 0 #e2d8c4,5px 5px 0 #f6f1e6,6px 6px 0 #d5c8ad,
-             18px 4px 0 -2px rgba(110,80,40,.12)}
-[data-theme=light] .shelf-grid .bc-cover{background:var(--tone)}
-[data-theme=light] .shelf-grid .bc-cover::after{display:none}
-[data-theme=light] .shelf-grid .bc-cover::before{border:1.5px solid rgba(255,255,255,.75);border-radius:4px}
-[data-theme=light] .shelf-grid .bc-spine{width:10%;background:color-mix(in srgb,var(--c) 82%,#fff);
-  box-shadow:inset -2px 0 0 color-mix(in srgb,var(--c) 30%,transparent),inset 2px 0 0 rgba(255,255,255,.35)}
-[data-theme=light] .shelf-grid .book-card .bc-name{color:var(--ink);text-shadow:none}
-[data-theme=light] .shelf-grid .bc-top{color:color-mix(in srgb,var(--ink) 75%,transparent)}
-[data-theme=light] .shelf-grid .bc-teacher{color:var(--ink)}
-[data-theme=light] .shelf-grid .bc-name .plus{color:var(--ink)}
-[data-theme=light] .shelf-grid .add-card{background:rgba(255,255,255,.55);border-color:#cbb48c}
-[data-theme=light] .shelf-empty{color:#9a8a6c}
-/* 줄 사이 선반 판 (같은 단색 나무) */
-[data-theme=light] .shelf-grid{row-gap:56px}
-[data-theme=light] .shelf-grid .plank{position:absolute;left:-12px;right:-12px;height:20px;z-index:0;pointer-events:none;
-  background:var(--wood);box-shadow:inset 0 5px 0 var(--wood-top),inset 0 -2px 0 var(--wood-dark),0 10px 0 rgba(110,80,40,.12)}
-@media(max-width:640px){
-  [data-theme=light] .shelf-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding:22px 16px 0;row-gap:50px;column-gap:16px;border-left-width:10px;border-right-width:10px}
-  [data-theme=light] .shelf-grid::after,[data-theme=light] .shelf-grid .plank{left:-10px;right:-10px}
-}
 </style>
 </head>
 <body>
@@ -1707,23 +1653,6 @@ function fillBooks(container, books, c){
     container.appendChild(el);
   });
 }
-/* 심플 버전: 책장 칸 안에서 책 줄이 바뀌는 자리마다 선반 판을 끼워 넣음 */
-function placePlanks(){
-  if(!PLAIN) return;
-  document.querySelectorAll('#grid .shelf-grid').forEach(sg => {
-    sg.querySelectorAll('.plank').forEach(p => p.remove());
-    const ys = [];
-    [...sg.children].filter(el => el.classList.contains('book-card')).forEach(el => {
-      const y = Math.round(el.offsetTop + el.offsetHeight);
-      if(!ys.some(v => Math.abs(v - y) < 4)) ys.push(y);
-    });
-    ys.sort((a,b) => a - b).slice(0, -1).forEach(y => {
-      const p = document.createElement('i'); p.className = 'plank'; p.style.top = y + 'px'; sg.appendChild(p);
-    });
-  });
-}
-let plankT;
-window.addEventListener('resize', () => { clearTimeout(plankT); plankT = setTimeout(placePlanks, 150); });
 function renderShelf(cid){
   const c = getCat(cid), g = $('#grid'); g.innerHTML = ''; g.className = '';
   $('#crumbRow').hidden = false;
@@ -1756,23 +1685,10 @@ function renderShelf(cid){
     });
     if(!shown.length) g.innerHTML = '<div class="empty-shelf">아직 등록된 e-Book이 없습니다.</div>';
   } else {
-    if(PLAIN){
-      /* 심플 버전: 선반이 없는 카테고리도 책장 한 칸에 꽂아 표시 */
-      g.className = 'shelves';
-      const sec = document.createElement('section'); sec.className = 'shelf solo';
-      sec.innerHTML = '<div class="shelf-grid"></div>';
-      const sg = sec.querySelector('.shelf-grid');
-      fillBooks(sg, books, c);
-      if(admin && cid !== LEGACY) sg.appendChild(addBookCard(c, '', books.length));
-      else if(!books.length) sg.innerHTML = '<div class="shelf-empty">아직 등록된 e-Book이 없습니다.</div>';
-      g.appendChild(sec);
-    } else {
-      fillBooks(g, books, c);
-      if(!books.length && !admin) g.innerHTML = '<div class="empty-shelf">아직 등록된 e-Book이 없습니다.</div>';
-      if(admin && cid !== LEGACY) g.appendChild(addBookCard(c, '', books.length));
-    }
+    fillBooks(g, books, c);
+    if(!books.length && !admin) g.innerHTML = '<div class="empty-shelf">아직 등록된 e-Book이 없습니다.</div>';
+    if(admin && cid !== LEGACY) g.appendChild(addBookCard(c, '', books.length));
   }
-  requestAnimationFrame(placePlanks);
   $('#stats').innerHTML = `<div class="stat"><b>${books.length}</b><span>e-Book</span></div>
     ${shelves.length ? `<div class="stat"><b>${shelves.length}</b><span>주제 선반</span></div>` : ''}
     <div class="stat"><b>${total}</b><span>등록 자료</span></div>`;
