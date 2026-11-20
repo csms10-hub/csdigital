@@ -353,6 +353,22 @@ footer{text-align:center;padding:26px;color:#6f7ea6;font-size:12.5px;border-top:
 @keyframes shimmer{from{background-position:200% 0}to{background-position:0 0}}
 .pg-media iframe.yt{width:100%;aspect-ratio:16/9;border:0;border-radius:6px;box-shadow:0 8px 20px rgba(60,40,10,.35);background:#000}
 .v-wrap{width:100%;display:flex;flex-direction:column;align-items:center;gap:.5em}
+/* 책 안의 하위 항목(예: 수업활동 사진 > 멸종위기동물 포스터) */
+.subdiv .sd-sec{font-size:.78em;color:#8a7350;letter-spacing:.04em;margin-bottom:.5em}
+.subdiv .sd-num{font-family:'Cinzel',serif;font-size:2.3em;color:var(--c);line-height:1;letter-spacing:.04em}
+.subdiv .dv-title{font-size:1.85em;margin-top:.35em}
+.toc li.sub{padding:.42em 0 .42em 1.9em;font-size:.86em;border-bottom-style:dotted}
+.toc li.sub .t{font-weight:600}
+.chip.sub{font-size:11.5px;opacity:.92}
+.mg-book{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:13px;color:#555;margin:-4px 0 14px}
+.mg-book b{color:#333}
+.mg-book label{display:inline-flex;gap:5px;align-items:center;cursor:pointer}
+.mg-book small{color:#999}
+.mg-sub{border:1px dashed #d9d2c2;border-radius:12px;padding:12px;margin-top:12px;background:#fdfcf8}
+.mg-sub h5{font-size:14px;margin-bottom:8px;color:#333}
+.mg-sub h5 small{font-weight:400;color:#999;margin-left:4px}
+.mg-subs-edit{display:block;margin-top:12px;font-size:12.5px;color:#666}
+.mg-subs-edit textarea{display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:8px 10px;border:1px solid #d6d0c2;border-radius:9px;font-size:13px;font-family:inherit;color:#222;background:#fff}
 .v-box{position:relative;width:100%;display:flex;justify-content:center}
 .v-hint{position:absolute;left:50%;bottom:14%;transform:translateX(-50%);z-index:3;pointer-events:none;white-space:nowrap;
   background:rgba(20,24,34,.84);color:#fff;font-size:.72em;font-weight:700;padding:.5em 1.1em;border-radius:999px;
@@ -1042,7 +1058,14 @@ const DEF_CATS = [
     ['미술','🎨','#c0561b','aidt-5'],['사회','🏛️','#b9770e','aidt-6'],['한문','📜','#7b5a43','aidt-7']]},
   {id:'fusion',   name:'경계를 넘는 수업',       en:'BEYOND BOUNDARIES',         icon:'🔗', color:'#6c3483', books:[['국어+과학','📖','#b03a2e'],['영어+정보','💻','#2463a8'],['역사+과학','📜','#7b5a43'],['영어+미술','🎨','#c0561b'],['도덕+국어+정보','🤝','#a93f6b'],['기술가정+진로','🛠️','#4d6575'],['진로+도덕','🧭','#1e8449']]}
 ];
-const CAT_VER = 2;   // 카테고리 구성 버전 (이미 저장된 자료를 새 구성으로 바꿀 때 사용)
+const CAT_VER = 2;
+/* 책별 구성 (영역 숨기기 · 영역 안의 하위 항목) */
+const BOOK_VER = 1;
+const BOOK_PRESET = {
+  'aidt-5': {name:'미술', hideSecs:['plan','result'], subs:{photo:[{id:'art-1', name:'멸종위기동물 포스터'}, {id:'art-2', name:'한지 스테인드글라스'}, {id:'art-3', name:'명화 광고 디자인'}]}, moveSecs:['plan','photo','result']},
+  'aidt-1': {name:'영어', subs:{photo:[{id:'eng-1', name:'AIDT'}, {id:'eng-2', name:'에듀테크 활용 수업'}, {id:'eng-3', name:'올잉 문법 수업'}]}, moveSecs:['photo']}
+};
+const presetOf = id => { const p = BOOK_PRESET[id]; return p ? JSON.parse(JSON.stringify({hideSecs:p.hideSecs || [], subs:p.subs || {}})) : {}; };   // 카테고리 구성 버전 (이미 저장된 자료를 새 구성으로 바꿀 때 사용)
 /* 주제별 선반 기본값 (디지털 기반 교육) */
 const DEF_SHELVES = { digital: [
   {id:'sh-code', name:'🔌 피지컬 코딩'},
@@ -1071,10 +1094,10 @@ const digitalBooks = () => DIGITAL_BOOKS.map(b => ({id:b[0], cat:'digital', shel
 const defShelves = id => (DEF_SHELVES[id] || []).map(o => Object.assign({}, o));
 const defCats = () => DEF_CATS.map(c => ({id:c.id, name:c.name, en:c.en, icon:c.icon, color:c.color, desc:'', hidePlan:!!c.hidePlan, shelves:defShelves(c.id)}));
 const DEF_SETTINGS = {year:'2026학년도', school:'창신중학교', title:'디지털 연구학교', subtitle:'AI·디지털 기반 수업 혁신, 배움이 자라는 교실',
-  introVideo:null, introYoutube:'', introSeconds:15, imgTarget:250000, featuredCat:'aidt', digitalVer:DIGITAL_VER, catVer:CAT_VER};
+  introVideo:null, introYoutube:'', introSeconds:15, imgTarget:250000, featuredCat:'aidt', digitalVer:DIGITAL_VER, catVer:CAT_VER, bookVer:BOOK_VER};
 const emptyItems = () => ({plan:[],photo:[],result:[]});
 function defaultBooks(){
-  return DEF_CATS.flatMap(c => c.books.map((b,i) => ({id:b[3] || `${c.id}-${i+1}`, cat:c.id, shelf:DEF_SHELF_OF[b[3] || `${c.id}-${i+1}`] || '', name:b[0], icon:b[1], color:b[2], teacher:'', desc:'', items:emptyItems()}))).concat(digitalBooks());
+  return DEF_CATS.flatMap(c => c.books.map((b,i) => Object.assign({id:b[3] || `${c.id}-${i+1}`, cat:c.id, shelf:DEF_SHELF_OF[b[3] || `${c.id}-${i+1}`] || '', name:b[0], icon:b[1], color:b[2], teacher:'', desc:'', items:emptyItems()}, presetOf(b[3] || `${c.id}-${i+1}`)))).concat(digitalBooks());
 }
 function defaultState(){
   return { settings: Object.assign({}, DEF_SETTINGS, {categories:defCats(), layoutVer:LAYOUT_VER}), subjects: defaultBooks() };
@@ -1122,10 +1145,31 @@ function migrateCats(s){
   s.settings.categories = cs.map((c,i) => [c,i]).sort((a,b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(a => a[0]);
   s.needsSeed = true;
 }
+/* 미술 · 영어 책을 새 구성으로: 기존 자료는 관리 모드의 '이전 자료'에 「○○ (예전 자료)」 책으로 따로 보관 */
+function migrateBooks1(s){
+  const norm = t => String(t || '').replace(/[\s|]/g, '');
+  Object.entries(BOOK_PRESET).forEach(([id, pr]) => {
+    const book = s.subjects.find(x => x.id === id && x.cat === 'aidt') || s.subjects.find(x => x.cat === 'aidt' && norm(x.name) === pr.name);
+    if(!book) return;                                   // 웹에서 지운 책은 되살리지 않음
+    const moved = emptyItems(); let n = 0;
+    (pr.moveSecs || []).forEach(k => { moved[k] = (book.items[k] || []).map(it => { const o = Object.assign({}, it); delete o.sub; return o; }); n += moved[k].length; book.items[k] = []; });
+    if(n){
+      let cs = s.settings.categories;
+      if(!cs.some(c => c.id === LEGACY)) cs.push({id:LEGACY, name:'이전 자료', en:'ARCHIVE', icon:'🗂️', color:'#5b6680', desc:'예전 구성에서 올린 자료입니다. 필요하면 내려받아 새 구성에 다시 올려 주세요.', shelves:[]});
+      let oid = book.id + '-old', k = 2; while(s.subjects.some(x => x.id === oid)) oid = book.id + '-old' + (k++);
+      s.subjects.push({id:oid, cat:LEGACY, shelf:'', name:`${String(book.name).replace(/\|/g, ' ')} (예전 자료)`, icon:book.icon, color:book.color, teacher:book.teacher || '', desc:'', items:moved});
+    }
+    const pre = presetOf(id);
+    book.hideSecs = pre.hideSecs;
+    book.subs = Object.assign({}, book.subs || {}, pre.subs);
+    s.needsSeed = true;
+  });
+}
 function normalize(s){
   if(!s || typeof s !== 'object') return defaultState();
   const savedDigitalVer = +((s.settings || {}).digitalVer) || 0;   // 기본값과 합치기 전에 저장된 값 확인
   const savedCatVer = +((s.settings || {}).catVer) || 0;
+  const savedBookVer = +((s.settings || {}).bookVer) || 0;
   s.settings = Object.assign({}, DEF_SETTINGS, s.settings || {});
   if(!Array.isArray(s.subjects)) s.subjects = [];
   s.subjects.forEach(x => {
@@ -1180,6 +1224,8 @@ function normalize(s){
     s.settings.categories.forEach(c => { if((c.id === 'literacy' || c.id === 'digital') && c.hidePlan === undefined){ c.hidePlan = true; s.needsSeed = true; } });
   }
   s.settings.catVer = CAT_VER;
+  if(savedBookVer < 1 && !s.freshDigital) migrateBooks1(s);
+  s.settings.bookVer = BOOK_VER;
   /* 선반: 카테고리에 선반 정보가 없으면 기본값, 책에 선반이 없으면 기본 배치 */
   s.settings.categories.forEach(c => { if(!Array.isArray(c.shelves)) c.shelves = defShelves(c.id); });
   s.subjects.forEach(x => {
@@ -1230,7 +1276,9 @@ const getSub = id => state.subjects.find(s => s.id === id);
 const cats = () => state.settings.categories;
 const getCat = id => cats().find(c => c.id === id);
 const ROMAN = ['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ'];
-const secsOf = s => { const c = getCat(s.cat); return SECTIONS.filter(x => !(x.key === 'plan' && c && c.hidePlan)).map((x,i) => Object.assign({}, x, {num:ROMAN[i]})); };
+const secsOf = s => { const c = getCat(s.cat), hid = s.hideSecs || [];
+  return SECTIONS.filter(x => !(x.key === 'plan' && c && c.hidePlan) && !hid.includes(x.key)).map((x,i) => Object.assign({}, x, {num:ROMAN[i]})); };
+const subsOf = (s, key) => (((s.subs || {})[key]) || []).filter(x => x && x.name);
 const booksOf = cid => state.subjects.filter(s => s.cat === cid);
 const bookBytes = s => SECTIONS.reduce((a,sec) => a + s.items[sec.key].reduce((b,it) => b + (it.size || 0), 0), 0);
 const bookCount = s => SECTIONS.reduce((a,sec) => a + s.items[sec.key].length, 0);
@@ -1280,6 +1328,7 @@ async function initFirebase(){
 }
 const stripSrc = it => { const o = Object.assign({}, it); delete o.src; return o; };
 const subjDoc = s => ({id:s.id, cat:s.cat, shelf:s.shelf || '', name:s.name, icon:s.icon, color:s.color, teacher:s.teacher || '', desc:s.desc || '',
+  hideSecs:s.hideSecs || [], subs:s.subs || {},
   items:Object.fromEntries(SECTIONS.map(sec => [sec.key, s.items[sec.key].map(stripSrc)]))});
 function settingsDoc(){ const st = Object.assign({}, state.settings); delete st.introVideo; return {settings:st, order:state.subjects.map(s => s.id)}; }
 async function fbWrite(fn){
@@ -1763,13 +1812,13 @@ function renderUsage(){
 /* ================= MANAGE ================= */
 let curManage = null;
 function openManage(id){ curManage = id; renderManage(); $('#manage').classList.add('open'); }
-function thumbHTML(it, i, key){
+function thumbHTML(it, i, key, num){
   const src = cachedSrc(it);
   const media = it.kind === 'youtube'
-    ? `<div class="th-media" style="background-image:url('https://i.ytimg.com/vi/${esc(it.yt)}/mqdefault.jpg')"><span class="yt-badge">▶ YouTube</span><i>${i+1}</i></div>`
-    : it.kind === 'link' ? `<div class="th-media th-link">🎬<span class="yt-badge" style="background:#1a73e8">▶ ${esc(VPROV[vInfo(it).prov] || '영상')}</span><i>${i+1}</i></div>`
-    : it.kind === 'video' ? `<div class="th-media">🎬<i>${i+1}</i></div>`
-    : `<div class="th-media" data-mid="${it.id}" style="${src ? `background-image:url('${src}')` : ''}"><i>${i+1}</i></div>`;
+    ? `<div class="th-media" style="background-image:url('https://i.ytimg.com/vi/${esc(it.yt)}/mqdefault.jpg')"><span class="yt-badge">▶ YouTube</span><i>${num || i+1}</i></div>`
+    : it.kind === 'link' ? `<div class="th-media th-link">🎬<span class="yt-badge" style="background:#1a73e8">▶ ${esc(VPROV[vInfo(it).prov] || '영상')}</span><i>${num || i+1}</i></div>`
+    : it.kind === 'video' ? `<div class="th-media">🎬<i>${num || i+1}</i></div>`
+    : `<div class="th-media" data-mid="${it.id}" style="${src ? `background-image:url('${src}')` : ''}"><i>${num || i+1}</i></div>`;
   return `<div class="thumb" data-key="${key}" data-i="${i}">${media}
     <input class="th-cap" value="${esc(it.caption)}" placeholder="설명(캡션) 입력">
     <div class="th-act"><button data-a="left" title="앞으로">◀</button><button data-a="right" title="뒤로">▶</button><button data-a="del" title="삭제">✕</button></div></div>`;
@@ -1792,13 +1841,26 @@ function renderManage(){
       <label>표지 색상<input type="color" data-f="color" value="${esc(s.color)}"></label>
       <label class="wide">수업 소개 (목차 페이지에 표시)<textarea data-f="desc" rows="2" placeholder="예: 생성형 AI를 활용한 토론 수업으로 비판적 사고력을 기르는 수업">${esc(s.desc)}</textarea></label>
     </div>
-    ${secsOf(s).map(sec => `<section class="mg-sec">
-      <h4>${sec.icon} ${sec.label} <small>${s.items[sec.key].length}개 · 권장 ${REC[sec.key]}개 이내</small></h4>
-      <label class="drop" data-key="${sec.key}"><input type="file" multiple accept="${accept}" data-key="${sec.key}">
+    <div class="mg-book"><b>이 책에 보일 영역</b>${SECTIONS.map(x => `<label><input type="checkbox" data-hide="${x.key}" ${(s.hideSecs || []).includes(x.key) ? '' : 'checked'}> ${x.label}</label>`).join('')}
+      ${(getCat(s.cat) || {}).hidePlan ? '<small>· 학업계획서는 카테고리 설정으로 빠져 있습니다</small>' : ''}</div>
+    ${secsOf(s).map(sec => {
+      const subs = subsOf(s, sec.key), all = s.items[sec.key].map((it,i) => [it,i]);
+      const upload = (sub) => `<label class="drop" data-key="${sec.key}" data-sub="${sub}"><input type="file" multiple accept="${accept}" data-key="${sec.key}" data-sub="${sub}">
         <b>클릭하거나 파일을 끌어다 놓으세요</b><span>${hint} / 한글(hwp)은 PDF로 저장 후 올려주세요</span></label>
-      <div class="yt-add"><input placeholder="영상 링크 붙여넣기 — 유튜브 · 구글 드라이브 · 비메오 · 네이버TV · mp4 주소 등" data-yt="${sec.key}"><button class="pbtn" data-ytadd="${sec.key}">＋ 영상 추가</button></div>
-      <div class="thumbs">${s.items[sec.key].map((it,i) => thumbHTML(it,i,sec.key)).join('')}</div>
-    </section>`).join('')}`;
+      <div class="yt-add"><input placeholder="영상 링크 붙여넣기 — 유튜브 · 구글 드라이브 · 비메오 · 네이버TV · mp4 주소 등" data-yt="${sec.key}|${sub}"><button class="pbtn" data-ytadd="${sec.key}|${sub}">＋ 영상 추가</button></div>`;
+      const thumbs = list => `<div class="thumbs">${list.map(([it,i],n) => thumbHTML(it,i,sec.key,n+1)).join('')}</div>`;
+      let body;
+      if(subs.length){
+        const rest = all.filter(([it]) => !subs.some(sb => sb.id === it.sub));
+        body = subs.map((sb,k) => { const list = all.filter(([it]) => it.sub === sb.id);
+            return `<div class="mg-sub"><h5>${sec.num}-${k+1}. ${esc(sb.name)}<small>${list.length}개</small></h5>${upload(sb.id)}${thumbs(list)}</div>`; }).join('')
+          + (rest.length ? `<div class="mg-sub"><h5>기타 <small>하위 항목이 정해지지 않은 자료 ${rest.length}개</small></h5>${thumbs(rest)}</div>` : '');
+      } else body = upload('') + thumbs(all);
+      return `<section class="mg-sec">
+      <h4>${sec.icon} ${sec.label} <small>${s.items[sec.key].length}개 · 권장 ${REC[sec.key]}개 이내</small></h4>
+      ${body}
+      <label class="mg-subs-edit">하위 항목 (한 줄에 하나 · 비워 두면 하위 항목 없이)<textarea data-subs="${sec.key}" rows="${Math.max(2, subs.length)}" placeholder="예: 멸종위기동물 포스터">${subs.map(sb => esc(sb.name)).join('\n')}</textarea></label>
+    </section>`; }).join('')}`;
   SECTIONS.forEach(sec => s.items[sec.key].forEach(it => { if(it.kind === 'image' && !cachedSrc(it)) loadAndPaint(it); }));
 }
 const mgBody = $('#mgBody');
@@ -1814,11 +1876,13 @@ mgBody.addEventListener('click', async e => {
   const s = getSub(curManage); if(!s) return;
   const ya = e.target.closest('[data-ytadd]');
   if(ya){
-    const key = ya.dataset.ytadd, inp = mgBody.querySelector(`[data-yt="${key}"]`), v = parseVideo(inp.value);
+    const [key, sub = ''] = ya.dataset.ytadd.split('|'), inp = mgBody.querySelector(`[data-yt="${ya.dataset.ytadd}"]`), v = parseVideo(inp.value);
     if(!v){ toast('⚠️ 영상 링크(https://…)를 붙여 넣어 주세요.'); return; }
-    s.items[key].push(v.kind === 'youtube'
+    const vit = v.kind === 'youtube'
       ? {id:uid(), kind:'youtube', yt:v.yt, caption:'수업 영상', size:0}
-      : {id:uid(), kind:'link', url:v.url, caption:'수업 영상', size:0});
+      : {id:uid(), kind:'link', url:v.url, caption:'수업 영상', size:0};
+    if(sub) vit.sub = sub;
+    s.items[key].push(vit);
     await store.subject(s, true); renderManage(); renderGrid();
     toast(v.prov === 'gdrive' ? '✅ 구글 드라이브 영상을 추가했습니다. 파일 공유를 「링크가 있는 모든 사용자」로 해 두어야 재생됩니다.'
         : v.prov === 'web' ? '✅ 링크를 추가했습니다. 이 사이트는 책 안에서 바로 재생되지 않을 수 있어 「영상 보기」 버튼으로 새 창에서 열립니다.'
@@ -1828,16 +1892,30 @@ mgBody.addEventListener('click', async e => {
   const b = e.target.closest('.th-act button'); if(!b) return;
   const th = b.closest('.thumb'), arr = s.items[th.dataset.key], i = +th.dataset.i;
   if(b.dataset.a === 'del'){ if(!confirm('이 자료를 삭제할까요?')) return; const [it] = arr.splice(i,1); store.removeMedia(it); }
-  if(b.dataset.a === 'left' && i > 0) [arr[i-1], arr[i]] = [arr[i], arr[i-1]];
-  if(b.dataset.a === 'right' && i < arr.length-1) [arr[i+1], arr[i]] = [arr[i], arr[i+1]];
+  const same = x => (x.sub || '') === ((arr[i] || {}).sub || '');
+  if(b.dataset.a === 'left'){ let j = i - 1; while(j >= 0 && !same(arr[j])) j--; if(j >= 0) [arr[j], arr[i]] = [arr[i], arr[j]]; }
+  if(b.dataset.a === 'right'){ let j = i + 1; while(j < arr.length && !same(arr[j])) j++; if(j < arr.length) [arr[j], arr[i]] = [arr[i], arr[j]]; }
   store.subject(s, true); renderManage(); renderGrid();
 });
 mgBody.addEventListener('change', e => {
-  if(e.target.type === 'file' && e.target.dataset.key){ handleFiles(e.target.dataset.key, e.target.files); e.target.value = ''; }
+  const s = getSub(curManage);
+  if(s && e.target.dataset.hide){
+    const k = e.target.dataset.hide, set = new Set(s.hideSecs || []);
+    if(e.target.checked) set.delete(k); else set.add(k);
+    s.hideSecs = SECTIONS.map(x => x.key).filter(x => set.has(x));
+    store.subject(s, true); renderManage(); renderGrid(); return;
+  }
+  if(s && e.target.dataset.subs){   /* 하위 항목: 줄 순서대로 기존 id 유지 (이름만 바꾸면 자료가 그대로) */
+    const k = e.target.dataset.subs, old = subsOf(s, k);
+    const lines = e.target.value.split('\n').map(t => t.trim()).filter(Boolean);
+    s.subs = Object.assign({}, s.subs || {}, {[k]: lines.map((name,i) => ({id: old[i] ? old[i].id : 'sb' + uid(), name}))});
+    store.subject(s, true); renderManage(); renderGrid(); return;
+  }
+  if(e.target.type === 'file' && e.target.dataset.key){ handleFiles(e.target.dataset.key, e.target.files, e.target.dataset.sub || ''); e.target.value = ''; }
 });
 mgBody.addEventListener('dragover', e => { const d = e.target.closest('.drop'); if(d){ e.preventDefault(); d.classList.add('over'); } });
 mgBody.addEventListener('dragleave', e => { const d = e.target.closest('.drop'); if(d) d.classList.remove('over'); });
-mgBody.addEventListener('drop', e => { const d = e.target.closest('.drop'); if(d){ e.preventDefault(); d.classList.remove('over'); handleFiles(d.dataset.key, e.dataTransfer.files); } });
+mgBody.addEventListener('drop', e => { const d = e.target.closest('.drop'); if(d){ e.preventDefault(); d.classList.remove('over'); handleFiles(d.dataset.key, e.dataTransfer.files, d.dataset.sub || ''); } });
 
 $('#mgDelete').onclick = async () => {
   const s = getSub(curManage);
@@ -1898,12 +1976,13 @@ async function pdfPages(file, progress, onPage){
   }
 }
 let busy = false;
-async function handleFiles(key, files){
+async function handleFiles(key, files, sub = ''){
   if(busy){ toast('이전 업로드를 처리하는 중입니다.'); return; }
   const s = getSub(curManage); if(!s || !files || !files.length) return;
   busy = true; let added = 0, failed = 0;
   const add = async (src, caption, kind='image') => {
     const it = {id:uid(), kind, caption, size:src.length};
+    if(sub) it.sub = sub;
     if(await store.addMedia(s, it, src)){ s.items[key].push(it); added++; } else failed++;
   };
   const list = [...files];
@@ -2002,8 +2081,18 @@ function buildPages(s){
   secsOf(s).forEach(sec => {
     if(out.length % 2 === 1) out.push({type:'blank'});
     out.push({type:'divider', sec});
-    const items = s.items[sec.key];
-    if(!items.length) out.push({type:'empty', sec});
+    const items = s.items[sec.key], subs = subsOf(s, sec.key);
+    if(subs.length){
+      /* 하위 항목마다 소제목 페이지 + 자료 */
+      const groups = subs.map(sb => ({sb, its:items.filter(it => it.sub === sb.id)}));
+      const rest = items.filter(it => !subs.some(sb => sb.id === it.sub));
+      if(rest.length) groups.push({sb:{id:'', name:'기타'}, its:rest});
+      groups.forEach((g,k) => {
+        out.push({type:'subdiv', sec, sb:g.sb, k, n:g.its.length});
+        if(!g.its.length) out.push({type:'empty', sec, sb:g.sb});
+        else g.its.forEach((it,i) => out.push({type:'item', sec, sb:g.sb, it, i, n:g.its.length}));
+      });
+    } else if(!items.length) out.push({type:'empty', sec});
     else items.forEach((it,i) => out.push({type:'item', sec, it, i, n:items.length}));
   });
   out.push({type:'end'});
@@ -2011,7 +2100,7 @@ function buildPages(s){
   out.push({type:'back'});
   return out;
 }
-const head = (sec, s) => `<div class="pg-head"><span>${sec.num}. ${sec.label}</span><span>${esc(plainName(s.name))}</span></div><div class="pg-rule"></div>`;
+const head = (sec, s, sb) => `<div class="pg-head"><span>${sec.num}. ${sec.label}${sb && sb.name ? ' · ' + esc(sb.name) : ''}</span><span>${esc(plainName(s.name))}</span></div><div class="pg-rule"></div>`;
 /* ---------- 영상 자동 재생 ---------- */
 const CAN_AUTO = {youtube:1, vimeo:1, naver:1, kakao:1, file:1};   // 구글 드라이브는 자동 재생을 지원하지 않음
 function autoURL(v){
@@ -2104,16 +2193,20 @@ function pageHTML(p, idx, s){
     case 'toc': {
       const rows = secsOf(s).map(sec => {
         const di = P.findIndex(x => x.type === 'divider' && x.sec.key === sec.key);
-        return `<li class="no-flip" data-go="${di}"><span class="n">${sec.num}</span><span class="t">${sec.label}</span><span class="c">${s.items[sec.key].length}건</span><span class="p">${di}</span></li>`;
+        return `<li class="no-flip" data-go="${di}"><span class="n">${sec.num}</span><span class="t">${sec.label}</span><span class="c">${s.items[sec.key].length}건</span><span class="p">${di}</span></li>`
+          + subsOf(s, sec.key).map((sb,k) => { const pi = P.findIndex(x => x.type === 'subdiv' && x.sec.key === sec.key && x.sb.id === sb.id);
+              return `<li class="no-flip sub" data-go="${pi}"><span class="n">${k+1}</span><span class="t">${esc(sb.name)}</span><span class="c">${s.items[sec.key].filter(it => it.sub === sb.id).length}건</span><span class="p">${pi}</span></li>`; }).join('');
       }).join('');
       return `<div class="pg paper"><div class="toc"><div class="toc-en">CONTENTS</div><h2>목차</h2><ul>${rows}</ul>
         <div class="toc-desc"><h5>수업 소개</h5>${s.desc ? esc(s.desc) : `${esc(st.year)} ${esc(st.school)} ${esc(st.title)} ‘${esc((getCat(s.cat) || {}).name || '')} · ${esc(plainName(s.name))}’ 운영 기록입니다.`}</div></div></div>`;
     }
+    case 'subdiv': return `<div class="pg divider subdiv"><div class="sd-sec">${p.sec.num}. ${p.sec.label}</div><div class="sd-num">${p.sec.num}-${p.k+1}</div>
+        <div class="dv-title">${esc(p.sb.name)}</div><div class="dv-line"></div><div class="dv-count">${esc(plainName(s.name))} · 자료 ${p.n}건</div></div>`;
     case 'divider': return `<div class="pg divider"><div class="dv-num">${p.sec.num}</div><div class="dv-icon">${p.sec.icon}</div>
         <div class="dv-en">${p.sec.en}</div><div class="dv-title">${p.sec.label}</div><div class="dv-line"></div>
         <div class="dv-count">${esc(plainName(s.name))} · 자료 ${s.items[p.sec.key].length}건</div></div>`;
-    case 'empty': return `<div class="pg paper sec-${p.sec.key}">${head(p.sec, s)}<div class="empty-box"><div>${p.sec.icon}</div>아직 등록된 자료가 없습니다.</div><div class="pg-num">${idx}</div></div>`;
-    case 'item': return `<div class="pg paper sec-${p.sec.key} ${p.i % 2 ? 'alt' : ''}">${head(p.sec, s)}
+    case 'empty': return `<div class="pg paper sec-${p.sec.key}">${head(p.sec, s, p.sb)}<div class="empty-box"><div>${p.sec.icon}</div>아직 등록된 자료가 없습니다.</div><div class="pg-num">${idx}</div></div>`;
+    case 'item': return `<div class="pg paper sec-${p.sec.key} ${p.i % 2 ? 'alt' : ''}">${head(p.sec, s, p.sb)}
         <div class="pg-media">${mediaHTML(p.it, idx)}</div>
         <div class="pg-cap"><b>${p.i+1}/${p.n}</b>${esc(p.it.caption)}</div><div class="pg-num">${idx}</div></div>`;
     case 'blank': return `<div class="pg paper"><div class="blank-orn">❦</div></div>`;
@@ -2144,7 +2237,8 @@ function openBook(id){
   $('#rTitle').innerHTML = `${ico(s.icon)}${esc(plainName(s.name))}<small>${esc((getCat(s.cat) || {}).name || '')} · ${esc(state.settings.year)} ${esc(state.settings.school)} ${esc(state.settings.title)}</small>`;
   const r = $('#rbRange'); r.max = L; r.value = 0;
   $('#rChips').innerHTML = `<button class="chip" data-p="0">표지</button>` +
-    secsOf(s).map(sec => `<button class="chip" data-p="${P.findIndex(x => x.type === 'divider' && x.sec.key === sec.key)}">${sec.icon} ${sec.label}</button>`).join('');
+    secsOf(s).map(sec => `<button class="chip" data-p="${P.findIndex(x => x.type === 'divider' && x.sec.key === sec.key)}">${sec.icon} ${sec.label}</button>`
+      + subsOf(s, sec.key).map(sb => `<button class="chip sub" data-p="${P.findIndex(x => x.type === 'subdiv' && x.sec.key === sec.key && x.sb.id === sb.id)}">· ${esc(sb.name)}</button>`).join('')).join('');
   $('#reader').classList.add('open'); document.body.style.overflow = 'hidden';
   layout(); updateUI();
 }
